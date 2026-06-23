@@ -1,0 +1,137 @@
+.footer {
+  margin-top: var(--space-16);
+  background: var(--color-forest);
+  border-top: 2px solid var(--color-golden-wheat);
+  color: var(--color-ivory-mist);
+}
+
+.top {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1.4fr;
+  gap: var(--space-8);
+  padding-block: var(--space-12);
+}
+
+.brandCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.brandRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.logo {
+  display: block;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.brandMain {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--text-lg);
+  color: var(--color-white);
+}
+
+.brandSub {
+  font-size: var(--text-sm);
+  color: var(--color-antique-sand);
+}
+
+.about {
+  font-size: var(--text-sm);
+  line-height: 1.9;
+  color: var(--color-ivory-mist);
+  max-width: 42ch;
+  opacity: 0.9;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.colTitle {
+  font-size: var(--text-base);
+  color: var(--color-golden-wheat);
+  font-weight: 700;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.linkList,
+.contactList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.linkList a {
+  font-size: var(--text-sm);
+  color: var(--color-ivory-mist);
+  transition: color 0.15s ease;
+}
+
+.linkList a:hover {
+  color: var(--color-golden-wheat);
+}
+
+.contactList li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--text-sm);
+  color: var(--color-ivory-mist);
+}
+
+.contactLabel {
+  font-size: var(--text-xs);
+  color: var(--color-antique-sand);
+  font-weight: 600;
+}
+
+.bar {
+  border-top: 1px solid var(--border-soft);
+  background: var(--color-emerald-shadow);
+}
+
+.barInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding-block: var(--space-4);
+  font-size: var(--text-xs);
+  color: var(--color-ivory-mist);
+}
+
+.barNote {
+  color: var(--color-antique-sand);
+  font-weight: 600;
+}
+
+@media (max-width: 860px) {
+  .top {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6);
+    padding-block: var(--space-8);
+  }
+
+  .brandCol {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 540px) {
+  .top {
+    grid-template-columns: 1fr;
+  }
+}

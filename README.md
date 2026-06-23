@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# منصة القرارات الرقمية | محافظة دمشق
 
-## Getting Started
+Digital Decisions Platform — an official government web platform for Damascus
+Governorate to **publish official decisions** and **collect citizen
+suggestions**.
 
-First, run the development server:
+Built with **Next.js (App Router)**, **React 19**, **TypeScript**, and **CSS
+Modules** (no Tailwind). The interface is **Arabic-first and RTL**.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Features
+
+### Public
+
+- **Homepage (`/`)** — searchable, filterable grid of published decisions
+  (filter by category and date range).
+- **Decision detail (`/decisions/[id]`)** — full decision text, prominent PDF
+  download, and a citizen suggestion form (`status: pending`).
+
+### Admin (prototype — no auth)
+
+- **Dashboard (`/admin`)** — stats cards and recent activity.
+- **Publish decision (`/admin/decisions/new`)** — create/publish a decision or
+  save as draft.
+- **Suggestions moderation (`/admin/suggestions`)** — table of suggestions with
+  status/category filters and approve/reject actions.
+
+## API routes
+
+| Method | Route                    | Description                                   |
+| ------ | ------------------------ | --------------------------------------------- |
+| GET    | `/api/decisions`         | List decisions (`?search=&category=&year=&month=`) |
+| POST   | `/api/decisions`         | Create a decision                             |
+| GET    | `/api/decisions/[id]`    | Get a single decision                         |
+| GET    | `/api/suggestions`       | List suggestions (`?status=&category=&decisionId=`) |
+| POST   | `/api/suggestions`       | Submit a citizen suggestion (`status: pending`) |
+| PATCH  | `/api/suggestions/[id]`  | Update suggestion status (`approved`/`rejected`) |
+| DELETE | `/api/suggestions/[id]`  | Remove a suggestion                           |
+
+Data is held in an **in-memory store** (`src/lib/store.ts`) seeded with 6 mock
+decisions. No database is required for the prototype. The store is attached to
+`globalThis` so it survives hot reloads during development.
+
+## Project structure
+
+```
+src/
+  app/
+    page.tsx                      # Public homepage
+    decisions/[id]/page.tsx       # Single decision view
+    admin/
+      layout.tsx                  # Admin shell + sidebar
+      page.tsx                    # Admin dashboard
+      decisions/new/page.tsx      # Publish a decision
+      suggestions/page.tsx        # Moderate suggestions
+    api/
+      decisions/route.ts
+      decisions/[id]/route.ts
+      suggestions/route.ts
+      suggestions/[id]/route.ts
+    globals.css                   # Design tokens, resets, base styles
+  components/                     # *.tsx + *.module.css
+  lib/
+    types.ts                      # TypeScript types
+    store.ts                      # In-memory seed store
+    db.ts                         # Data-access helpers
+    format.ts                     # Arabic date/number formatting
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Getting started
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Then open [http://localhost:3000](http://localhost:3000).
 
-## Learn More
+> **Note:** `next/font/google` downloads the Cairo and IBM Plex Sans Arabic
+> fonts at build/dev time, so the first run requires network access.
 
-To learn more about Next.js, take a look at the following resources:
+## Design system
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Brand tokens live in `src/app/globals.css`. The platform uses a formal,
+institutional aesthetic: ivory-mist background, forest/emerald surfaces,
+golden-wheat accents, square corners (official-document feel), and borders
+instead of generic shadows for depth.

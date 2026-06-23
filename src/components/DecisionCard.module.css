@@ -1,0 +1,89 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--color-white);
+  border: 1px solid var(--color-antique-sand);
+  border-radius: 0;
+  padding: var(--space-5);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.card:hover {
+  border-color: var(--color-mountain-teal);
+  background: #fbfaf4;
+}
+
+.top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.badge {
+  background: var(--color-golden-wheat);
+  color: var(--color-charcoal);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 4px 10px;
+  border-radius: 2px;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: end;
+  gap: 2px;
+}
+
+.number {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-emerald-shadow);
+}
+
+.date {
+  font-size: var(--text-xs);
+  color: var(--color-stone);
+}
+
+.title {
+  font-size: var(--text-xl);
+  line-height: 1.4;
+}
+
+.title a:hover {
+  color: var(--color-mountain-teal);
+}
+
+.location {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-mountain-teal);
+}
+
+.summary {
+  color: var(--color-stone);
+  font-size: var(--text-sm);
+  line-height: 1.8;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding-top: var(--space-2);
+}
+
+.action {
+  flex: 1 1 auto;
+}
