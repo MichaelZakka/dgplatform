@@ -1,0 +1,151 @@
+.shell {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mobileBar {
+  display: none;
+}
+
+.menuBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-antique-sand);
+  background: var(--color-white);
+  color: var(--color-charcoal);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.menuBtn:hover {
+  background: #fbfaf4;
+  border-color: var(--color-golden-wheat);
+}
+
+.backdrop {
+  display: none;
+}
+
+.content {
+  flex: 1;
+  background: var(--color-ivory-mist);
+  padding: var(--space-8);
+  min-width: 0;
+}
+
+@media (max-width: 860px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .mobileBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-forest);
+    border-bottom: 2px solid var(--color-golden-wheat);
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+
+  .mobileBrand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+    border-radius: 2px;
+    padding: var(--space-1) var(--space-2);
+    margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-2));
+    transition: background-color 0.15s ease;
+  }
+
+  .mobileBrand:hover {
+    background: var(--color-emerald-shadow);
+  }
+
+  .mobileBrand:hover .mobileTitleMain {
+    color: var(--color-antique-sand);
+  }
+
+  .mobileBrand:hover .mobileTitleSub {
+    color: var(--color-ivory-mist);
+  }
+
+  .mobileLogo {
+    display: block;
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+  }
+
+  .mobileBrand:hover .mobileLogo {
+    transform: scale(1.05);
+  }
+
+  .mobileTitles {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+    min-width: 0;
+  }
+
+  .mobileTitleMain {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-base);
+    color: var(--color-white);
+    transition: color 0.15s ease;
+  }
+
+  .mobileTitleSub {
+    font-size: var(--text-xs);
+    color: var(--color-antique-sand);
+    transition: color 0.15s ease;
+  }
+
+  .menuBtn {
+    flex-shrink: 0;
+    border-color: var(--color-golden-wheat);
+    background: var(--color-emerald-shadow);
+    color: var(--color-white);
+  }
+
+  .menuBtn:hover {
+    background: var(--color-mountain-teal);
+    border-color: var(--color-antique-sand);
+  }
+
+  .backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    border: none;
+    padding: 0;
+    background: rgba(26, 26, 26, 0.45);
+    cursor: pointer;
+  }
+
+  .content {
+    padding: var(--space-5);
+  }
+}

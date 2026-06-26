@@ -7,7 +7,7 @@ import {
   getDirectorates,
   getAreas,
 } from "@/lib/locations";
-import { SearchIcon } from "./icons";
+import { CloseIcon, SearchIcon } from "./icons";
 import styles from "./FilterBar.module.css";
 
 type Period = "all" | "month" | "quarter" | "year" | "lastYear";
@@ -121,6 +121,11 @@ export default function FilterBar() {
     pushQuery({ search, governorate, directorate, area, period });
   }
 
+  function clearSearch() {
+    setSearch("");
+    pushQuery({ search: "", governorate, directorate, area, period });
+  }
+
   function onGovernorate(value: string) {
     setGovernorate(value);
     setDirectorate("");
@@ -169,13 +174,23 @@ export default function FilterBar() {
           <SearchIcon />
         </span>
         <input
-          type="search"
+          type="text"
           className={styles.searchInput}
           placeholder="ابحث في القرارات..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           aria-label="بحث"
         />
+        {search && (
+          <button
+            type="button"
+            className={styles.clearSearch}
+            onClick={clearSearch}
+            aria-label="مسح البحث"
+          >
+            <CloseIcon />
+          </button>
+        )}
         <button type="submit" className="btn btn-primary">
           بحث
         </button>

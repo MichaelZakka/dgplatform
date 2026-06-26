@@ -38,9 +38,9 @@ export default function DecisionCard({ decision }: { decision: Decision }) {
           قراءة المزيد
         </Link>
         <a
-          href={decision.pdfUrl || "#"}
+          href={`/api/decisions/${decision.id}/pdf`}
           className={`btn btn-secondary ${styles.action}`}
-          download
+          download={`decision-${decision.number.replace(/\//g, "-")}.pdf`}
         >
           <DownloadIcon />
           تحميل PDF

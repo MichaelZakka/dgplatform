@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { CATEGORIES } from "@/lib/types";
 import { arabicNumber } from "@/lib/format";
 import styles from "./Footer.module.css";
 
@@ -30,37 +28,6 @@ export default function Footer() {
             تعزيزاً للشفافية والمشاركة المجتمعية في صناعة القرار.
           </p>
         </div>
-
-        <nav className={styles.col} aria-label="روابط سريعة">
-          <h2 className={styles.colTitle}>روابط سريعة</h2>
-          <ul className={styles.linkList}>
-            <li>
-              <Link href="/">القرارات الرسمية</Link>
-            </li>
-            <li>
-              <Link href="/admin">لوحة الإدارة</Link>
-            </li>
-            <li>
-              <Link href="/admin/decisions/new">نشر قرار جديد</Link>
-            </li>
-            <li>
-              <Link href="/admin/suggestions">المقترحات</Link>
-            </li>
-          </ul>
-        </nav>
-
-        <nav className={styles.col} aria-label="التصنيفات">
-          <h2 className={styles.colTitle}>التصنيفات</h2>
-          <ul className={styles.linkList}>
-            {CATEGORIES.map((cat) => (
-              <li key={cat}>
-                <Link href={`/?category=${encodeURIComponent(cat)}`}>
-                  {cat}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
 
         <div className={styles.col}>
           <h2 className={styles.colTitle}>تواصل معنا</h2>

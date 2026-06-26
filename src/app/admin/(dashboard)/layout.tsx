@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
-import AdminSidebar from "@/components/AdminSidebar";
+import AdminShell from "@/components/AdminShell";
 import { getSession } from "@/lib/auth";
-import styles from "./layout.module.css";
 
 export default async function DashboardLayout({
   children,
@@ -13,10 +12,5 @@ export default async function DashboardLayout({
     redirect("/admin/login");
   }
 
-  return (
-    <div className={styles.shell}>
-      <AdminSidebar />
-      <div className={styles.content}>{children}</div>
-    </div>
-  );
+  return <AdminShell>{children}</AdminShell>;
 }

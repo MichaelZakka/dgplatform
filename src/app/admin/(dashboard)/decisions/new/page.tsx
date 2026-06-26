@@ -16,7 +16,7 @@ export default function NewDecisionPage() {
   const router = useRouter();
   const [state, setState] = useState<FormState>("idle");
   const [errorMsg, setErrorMsg] = useState("");
-  const [fileName, setFileName] = useState("");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
 
   const [form, setForm] = useState({
     number: "",
@@ -59,30 +59,47 @@ export default function NewDecisionPage() {
       : [];
 
   async function submit(status: "draft" | "published") {
-    if (
-      !form.title.trim() ||
-      !form.summary.trim() ||
-      !form.fullText.trim() ||
-      !form.category ||
-      !form.governorate ||
-      !form.date
-    ) {
+    if (!form.title.trim()) {
       setState("error");
-      setErrorMsg("يرجى تعبئة جميع الحقول المطلوبة قبل المتابعة.");
+      setErrorMsg("يرجى إدخال عنوان القرار على الأقل.");
       return;
+    }
+
+    if (status === "published") {
+      if (
+        !form.summary.trim() ||
+        !form.fullText.trim() ||
+        !form.category ||
+        !form.governorate ||
+        !form.date
+      ) {
+        setState("error");
+        setErrorMsg("يرجى تعبئة جميع الحقول المطلوبة قبل النشر.");
+        return;
+      }
     }
 
     setState("submitting");
     setErrorMsg("");
     try {
+      // Upload PDF file first (if provided) then create the decision
+      let pdfUrl = "";
+      if (pdfFile) {
+        const fd = new FormData();
+        fd.append("file", pdfFile);
+        const uploadRes = await fetch("/api/upload", { method: "POST", body: fd });
+        if (!uploadRes.ok) {
+          const uploadData = await uploadRes.json().catch(() => ({}));
+          throw new Error(uploadData.error || "تعذّر رفع ملف PDF.");
+        }
+        const uploadData = await uploadRes.json();
+        pdfUrl = uploadData.pdfUrl ?? "";
+      }
+
       const res = await fetch("/api/decisions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          status,
-          pdfUrl: fileName ? `/decisions/${fileName}` : "",
-        }),
+        body: JSON.stringify({ ...form, status, pdfUrl }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -135,6 +152,7 @@ export default function NewDecisionPage() {
               className={styles.input}
               value={form.date}
               onChange={(e) => update("date", e.target.value)}
+              dir="ltr"
               required
             />
           </div>
@@ -187,10 +205,11 @@ export default function NewDecisionPage() {
               type="file"
               accept=".pdf"
               className={styles.file}
-              onChange={(e) =>
-                setFileName(e.target.files?.[0]?.name ?? "")
-              }
+              onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
             />
+            {pdfFile && (
+              <span className={styles.fileName}>{pdfFile.name}</span>
+            )}
           </div>
         </div>
 
@@ -292,6 +311,10 @@ export default function NewDecisionPage() {
             {errorMsg}
           </p>
         )}
+
+        <p className={styles.draftHint}>
+          حفظ المسودة يتطلب العنوان فقط — يمكنك إكمال بقية الحقول لاحقاً قبل النشر.
+        </p>
 
         <div className={styles.actions}>
           <button

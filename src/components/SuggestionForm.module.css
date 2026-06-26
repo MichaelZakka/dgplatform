@@ -5,7 +5,7 @@
   padding: var(--space-6);
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .title {
@@ -15,15 +15,71 @@
 .hint {
   font-size: var(--text-sm);
   color: var(--color-stone);
+  line-height: 1.7;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
   align-items: flex-start;
 }
 
+/* ---- Honeypot (invisible to humans) ---- */
+.honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  tab-index: -1;
+}
+
+/* ---- Field ---- */
+.field {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.label {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-emerald-shadow);
+}
+
+.req {
+  color: var(--color-damask-red);
+  margin-inline-start: 2px;
+}
+
+/* ---- Text input ---- */
+.input {
+  width: 100%;
+  border: 1px solid var(--border-soft);
+  border-radius: 2px;
+  padding: var(--space-3);
+  color: var(--color-charcoal);
+  background: var(--color-ivory-mist);
+  font-size: var(--text-sm);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.input:focus {
+  outline: 2px solid var(--color-mountain-teal);
+  background: var(--color-white);
+}
+
+/* ---- Textarea ---- */
 .textarea {
   width: 100%;
   resize: vertical;
@@ -34,11 +90,135 @@
   color: var(--color-charcoal);
   background: var(--color-ivory-mist);
   line-height: 1.8;
+  font-size: var(--text-sm);
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .textarea:focus {
   outline: 2px solid var(--color-mountain-teal);
   background: var(--color-white);
+}
+
+.textareaInvalid {
+  border-color: var(--color-damask-red);
+}
+
+.textareaInvalid:focus {
+  outline: 2px solid var(--color-damask-red);
+}
+
+/* ---- Character counter ---- */
+.counter {
+  font-size: var(--text-xs);
+  color: var(--color-stone);
+  font-variant-numeric: tabular-nums;
+}
+
+.counterWarn {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.counterOver {
+  color: var(--color-damask-red);
+  font-weight: 700;
+}
+
+/* ---- Checkbox CAPTCHA widget ---- */
+.captchaBox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: var(--color-ivory-mist);
+  border: 1px solid var(--color-antique-sand);
+  border-radius: 4px;
+  padding: var(--space-4) var(--space-5);
+  width: 100%;
+  max-width: 340px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.captchaCheck {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #c1c1c1;
+  border-radius: 3px;
+  background: var(--color-white);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.captchaCheck:hover:not(:disabled) {
+  border-color: #4A7C7E;
+}
+
+.captchaCheck:disabled {
+  cursor: default;
+}
+
+.captchaChecked {
+  background: #4A7C7E;
+  border-color: #4A7C7E;
+  color: white;
+}
+
+.captchaFailed {
+  border-color: var(--color-damask-red);
+}
+
+/* Spinner animation */
+.spinner {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #c1c1c1;
+  border-top-color: #4A7C7E;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.captchaLabel {
+  flex: 1;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-charcoal);
+}
+
+/* Brand badge (decorative) */
+.captchaBrand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-inline-start: auto;
+}
+
+.captchaBrandText {
+  font-size: 9px;
+  color: var(--color-stone);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+/* ---- Messages ---- */
+.fieldError {
+  font-size: var(--text-sm);
+  color: var(--color-damask-red);
+  font-weight: 600;
+}
+
+.error {
+  color: var(--color-damask-red);
+  font-size: var(--text-sm);
+  font-weight: 600;
 }
 
 .success {
@@ -52,14 +232,5 @@
   padding: var(--space-4);
   color: var(--color-emerald-shadow);
   font-weight: 600;
-}
-
-.again {
-  margin-top: var(--space-1);
-}
-
-.error {
-  color: var(--color-damask-red);
-  font-size: var(--text-sm);
-  font-weight: 600;
+  line-height: 1.7;
 }

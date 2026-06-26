@@ -119,6 +119,7 @@ export interface SuggestionQuery {
   category?: string;
   status?: string;
   decisionId?: string;
+  date?: string;
 }
 
 export interface SuggestionWithDecision extends Suggestion {
@@ -140,7 +141,7 @@ function enrichSuggestion(s: Suggestion): SuggestionWithDecision {
 export function listSuggestions(
   query: SuggestionQuery = {}
 ): SuggestionWithDecision[] {
-  const { category, status, decisionId } = query;
+  const { category, status, decisionId, date } = query;
   let results = Array.from(store.suggestions.values()).map(enrichSuggestion);
 
   if (status && status.trim()) {
@@ -153,6 +154,10 @@ export function listSuggestions(
 
   if (decisionId && decisionId.trim()) {
     results = results.filter((s) => s.decisionId === decisionId);
+  }
+
+  if (date && date.trim()) {
+    results = results.filter((s) => s.createdAt.startsWith(date));
   }
 
   return sortByDateDesc(results);
@@ -170,7 +175,16 @@ export function getSuggestionsForDecision(
 
 export interface CreateSuggestionInput {
   decisionId: string;
+  email: string;
   body: string;
+}
+
+export function hasEmailSubmittedForDecision(
+  decisionId: string,
+  email: string
+): boolean {
+  const set = store.submittedEmails?.get(decisionId);
+  return set?.has(email.toLowerCase()) ?? false;
 }
 
 export function createSuggestion(input: CreateSuggestionInput): Suggestion {
@@ -178,11 +192,18 @@ export function createSuggestion(input: CreateSuggestionInput): Suggestion {
   const suggestion: Suggestion = {
     id,
     decisionId: input.decisionId,
+    email: input.email.toLowerCase(),
     body: input.body,
     status: "pending",
     createdAt: new Date().toISOString(),
   };
   store.suggestions.set(id, suggestion);
+
+  // Track email so the same address cannot submit again for this decision
+  const existing = store.submittedEmails.get(input.decisionId) ?? new Set<string>();
+  existing.add(input.email.toLowerCase());
+  store.submittedEmails.set(input.decisionId, existing);
+
   return suggestion;
 }
 
@@ -198,25 +219,97 @@ export function updateSuggestionStatus(
 }
 
 export function deleteSuggestion(id: string): boolean {
-  return store.suggestions.delete(id);
+  const suggestion = store.suggestions.get(id);
+  if (!suggestion) return false;
+
+  store.suggestions.delete(id);
+
+  const emails = store.submittedEmails?.get(suggestion.decisionId);
+  if (emails) {
+    emails.delete(suggestion.email.toLowerCase());
+    if (emails.size === 0) {
+      store.submittedEmails.delete(suggestion.decisionId);
+    }
+  }
+
+  return true;
+}
+
+export function deleteDecision(id: string): boolean {
+  return store.decisions.delete(id);
+}
+
+export function listDraftDecisions(): Decision[] {
+  return sortByDateDesc(
+    Array.from(store.decisions.values()).filter((d) => d.status === "draft")
+  );
+}
+
+export function updateDecisionStatus(
+  id: string,
+  status: Decision["status"]
+): Decision | undefined {
+  const decision = store.decisions.get(id);
+  if (!decision) return undefined;
+  const updated: Decision = { ...decision, status };
+  store.decisions.set(id, updated);
+  return updated;
+}
+
+export interface UpdateDecisionInput {
+  title?: string;
+  summary?: string;
+  fullText?: string;
+  category?: Decision["category"];
+  governorate?: string;
+  directorate?: string;
+  area?: string;
+  date?: string;
+  pdfUrl?: string;
+  number?: string;
+  status?: Decision["status"];
+}
+
+export function updateDecision(
+  id: string,
+  input: UpdateDecisionInput
+): Decision | undefined {
+  const decision = store.decisions.get(id);
+  if (!decision) return undefined;
+
+  const updated: Decision = {
+    ...decision,
+    title: input.title ?? decision.title,
+    summary: input.summary ?? decision.summary,
+    fullText: input.fullText ?? decision.fullText,
+    category: input.category ?? decision.category,
+    governorate: input.governorate ?? decision.governorate,
+    directorate: input.directorate ?? decision.directorate,
+    area: input.area ?? decision.area,
+    date: input.date ?? decision.date,
+    pdfUrl: input.pdfUrl ?? decision.pdfUrl,
+    number: input.number?.trim() ? input.number.trim() : decision.number,
+    status: input.status ?? decision.status,
+  };
+
+  store.decisions.set(id, updated);
+  return updated;
 }
 
 export interface AdminStats {
   totalDecisions: number;
+  totalDrafts: number;
   pendingSuggestions: number;
   approvedSuggestions: number;
 }
 
 export function getAdminStats(): AdminStats {
-  const decisions = Array.from(store.decisions.values()).filter(
-    (d) => d.status === "published"
-  );
+  const allDecisions = Array.from(store.decisions.values());
   const suggestions = Array.from(store.suggestions.values());
   return {
-    totalDecisions: decisions.length,
-    pendingSuggestions: suggestions.filter((s) => s.status === "pending")
-      .length,
-    approvedSuggestions: suggestions.filter((s) => s.status === "approved")
-      .length,
+    totalDecisions: allDecisions.filter((d) => d.status === "published").length,
+    totalDrafts: allDecisions.filter((d) => d.status === "draft").length,
+    pendingSuggestions: suggestions.filter((s) => s.status === "pending").length,
+    approvedSuggestions: suggestions.filter((s) => s.status === "approved").length,
   };
 }

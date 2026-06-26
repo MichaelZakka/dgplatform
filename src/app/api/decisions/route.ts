@@ -48,37 +48,49 @@ export async function POST(request: NextRequest) {
   const pdfUrl = typeof data.pdfUrl === "string" ? data.pdfUrl : "";
   const number = typeof data.number === "string" ? data.number : "";
   const status = data.status === "draft" ? "draft" : "published";
+  const isDraft = status === "draft";
 
-  if (!title || !summary || !fullText || !date || !governorate) {
+  // Title is always required
+  if (!title) {
     return NextResponse.json(
-      { error: "يرجى تعبئة جميع الحقول المطلوبة." },
+      { error: "يرجى إدخال عنوان القرار على الأقل." },
       { status: 400 }
     );
   }
 
-  if (!CATEGORIES.includes(category)) {
-    return NextResponse.json(
-      { error: "التصنيف المحدد غير صالح." },
-      { status: 400 }
-    );
-  }
+  // All other fields are required only for published decisions
+  if (!isDraft) {
+    if (!summary || !fullText || !date || !governorate) {
+      return NextResponse.json(
+        { error: "يرجى تعبئة جميع الحقول المطلوبة." },
+        { status: 400 }
+      );
+    }
 
-  if (!isValidGovernorate(governorate)) {
-    return NextResponse.json(
-      { error: "المحافظة المحددة غير صالحة." },
-      { status: 400 }
-    );
+    if (!CATEGORIES.includes(category)) {
+      return NextResponse.json(
+        { error: "التصنيف المحدد غير صالح." },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidGovernorate(governorate)) {
+      return NextResponse.json(
+        { error: "المحافظة المحددة غير صالحة." },
+        { status: 400 }
+      );
+    }
   }
 
   const decision = createDecision({
     title,
-    summary,
-    fullText,
-    category,
-    governorate,
-    directorate,
-    area,
-    date,
+    summary: summary || "",
+    fullText: fullText || "",
+    category: CATEGORIES.includes(category) ? category : CATEGORIES[0],
+    governorate: governorate || "",
+    directorate: directorate || "",
+    area: area || "",
+    date: date || new Date().toISOString().slice(0, 10),
     pdfUrl,
     number,
     status,

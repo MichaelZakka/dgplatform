@@ -1,20 +1,75 @@
 .sidebar {
-  background: var(--color-charcoal);
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
+  background: var(--color-forest);
   color: var(--color-ivory-mist);
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
   padding: var(--space-6) var(--space-4);
-  min-height: 100%;
 }
 
 .heading {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-3);
   padding-inline: var(--space-2);
   padding-bottom: var(--space-4);
   border-bottom: 1px solid rgba(185, 167, 121, 0.25);
+}
+
+.headingBrand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 2px;
+  padding: var(--space-1);
+  margin: calc(-1 * var(--space-1));
+  transition: background-color 0.15s ease;
+}
+
+.headingBrand:hover {
+  background: var(--color-emerald-shadow);
+}
+
+.headingBrand:hover .headingMain {
+  color: var(--color-antique-sand);
+}
+
+.headingBrand:hover .headingSub {
+  color: var(--color-ivory-mist);
+}
+
+.headingBrand:hover .logo {
+  transform: scale(1.05);
+}
+
+.closeBtn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--color-antique-sand);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.closeBtn:hover {
+  background: var(--color-emerald-shadow);
+  color: var(--color-white);
 }
 
 .logo {
@@ -23,6 +78,7 @@
   height: 44px;
   object-fit: contain;
   flex-shrink: 0;
+  transition: transform 0.15s ease;
 }
 
 .headingMain {
@@ -30,11 +86,13 @@
   font-weight: 700;
   font-size: var(--text-lg);
   color: var(--color-white);
+  transition: color 0.15s ease;
 }
 
 .headingSub {
   font-size: var(--text-xs);
   color: var(--color-antique-sand);
+  transition: color 0.15s ease;
 }
 
 .nav {
@@ -57,17 +115,17 @@
 }
 
 .link:hover {
-  background: var(--color-stone);
+  background: var(--color-emerald-shadow);
 }
 
 .linkActive {
-  background: var(--color-mountain-teal);
+  background: var(--color-emerald-shadow);
   border-inline-start-color: var(--color-golden-wheat);
   color: var(--color-white);
 }
 
 .linkActive:hover {
-  background: var(--color-mountain-teal);
+  background: var(--color-emerald-shadow);
 }
 
 .exit {
@@ -95,18 +153,27 @@
 
 @media (max-width: 860px) {
   .sidebar {
-    min-height: auto;
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: auto;
+    width: min(280px, 88vw);
+    height: 100vh;
+    max-height: 100vh;
+    z-index: 60;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    pointer-events: none;
+    visibility: hidden;
   }
 
-  .nav {
-    flex-direction: row;
-    flex-wrap: wrap;
+  .sidebarOpen {
+    transform: translateX(0);
+    pointer-events: auto;
+    visibility: visible;
   }
 
-  .footerActions {
-    margin-top: var(--space-2);
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
+  .closeBtn {
+    display: inline-flex;
   }
 }

@@ -15,6 +15,7 @@ export type DecisionStatus = "draft" | "published";
 export interface Suggestion {
   id: string;
   decisionId: string;
+  email: string;
   body: string;
   status: SuggestionStatus;
   createdAt: string;

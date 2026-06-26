@@ -40,9 +40,9 @@ export default function DecisionDetail({ decision }: { decision: Decision }) {
         <p className={styles.summary}>{decision.summary}</p>
 
         <a
-          href={decision.pdfUrl || "#"}
+          href={`/api/decisions/${decision.id}/pdf`}
           className={`btn btn-primary ${styles.download}`}
-          download
+          download={`decision-${decision.number.replace(/\//g, "-")}.pdf`}
         >
           <DownloadIcon />
           تحميل القرار بصيغة PDF

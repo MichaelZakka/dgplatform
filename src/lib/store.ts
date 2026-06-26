@@ -11,10 +11,17 @@ import type {
 interface Store {
   decisions: Map<string, Decision>;
   suggestions: Map<string, Suggestion>;
+  /** decisionId → Set of emails that have already submitted */
+  submittedEmails: Map<string, Set<string>>;
 }
+
+// Bump this version string whenever the Store shape changes so stale
+// globalThis values (from a previous dev-server run) are discarded.
+const STORE_VERSION = "v3";
 
 const globalForStore = globalThis as unknown as {
   __damascusStore?: Store;
+  __damascusStoreVersion?: string;
 };
 
 function seedDecisions(): Decision[] {
@@ -32,7 +39,7 @@ function seedDecisions(): Decision[] {
       directorate: "مديرية المنطقة الأولى",
       area: "القنوات",
       date: "2026-06-10",
-      pdfUrl: "/decisions/decision-2026-142.pdf",
+      pdfUrl: "/files/decisions/decision-2026-142.pdf",
       status: "published",
       createdAt: "2026-06-10T09:00:00.000Z",
     },
@@ -49,7 +56,7 @@ function seedDecisions(): Decision[] {
       directorate: "مديرية برزة",
       area: "القابون",
       date: "2026-05-28",
-      pdfUrl: "/decisions/decision-2026-138.pdf",
+      pdfUrl: "/files/decisions/decision-2026-138.pdf",
       status: "published",
       createdAt: "2026-05-28T08:30:00.000Z",
     },
@@ -66,7 +73,7 @@ function seedDecisions(): Decision[] {
       directorate: "مديرية المزة",
       area: "المزة",
       date: "2026-05-15",
-      pdfUrl: "/decisions/decision-2026-131.pdf",
+      pdfUrl: "/files/decisions/decision-2026-131.pdf",
       status: "published",
       createdAt: "2026-05-15T10:15:00.000Z",
     },
@@ -83,7 +90,7 @@ function seedDecisions(): Decision[] {
       directorate: "مديرية الميدان",
       area: "الميدان",
       date: "2026-04-30",
-      pdfUrl: "/decisions/decision-2026-124.pdf",
+      pdfUrl: "/files/decisions/decision-2026-124.pdf",
       status: "published",
       createdAt: "2026-04-30T11:45:00.000Z",
     },
@@ -100,7 +107,7 @@ function seedDecisions(): Decision[] {
       directorate: "مديرية باب توما",
       area: "باب توما",
       date: "2026-04-12",
-      pdfUrl: "/decisions/decision-2026-118.pdf",
+      pdfUrl: "/files/decisions/decision-2026-118.pdf",
       status: "published",
       createdAt: "2026-04-12T09:20:00.000Z",
     },
@@ -117,7 +124,7 @@ function seedDecisions(): Decision[] {
       directorate: "مديرية المهاجرين",
       area: "ركن الدين",
       date: "2026-03-25",
-      pdfUrl: "/decisions/decision-2026-109.pdf",
+      pdfUrl: "/files/decisions/decision-2026-109.pdf",
       status: "published",
       createdAt: "2026-03-25T07:50:00.000Z",
     },
@@ -129,6 +136,7 @@ function seedSuggestions(): Suggestion[] {
     {
       id: "s1",
       decisionId: "1",
+      email: "citizen1@example.com",
       body: "نقترح إضافة خط نقل إضافي يربط المنطقة المركزية بالأحياء الجنوبية لتخفيف الضغط.",
       status: "pending",
       createdAt: "2026-06-12T13:00:00.000Z",
@@ -136,6 +144,7 @@ function seedSuggestions(): Suggestion[] {
     {
       id: "s2",
       decisionId: "3",
+      email: "citizen2@example.com",
       body: "يرجى تخصيص عيادة مسائية للأطفال في المراكز الصحية ذات الكثافة العالية.",
       status: "approved",
       createdAt: "2026-05-18T15:30:00.000Z",
@@ -143,6 +152,7 @@ function seedSuggestions(): Suggestion[] {
     {
       id: "s3",
       decisionId: "2",
+      email: "citizen3@example.com",
       body: "نأمل إعطاء الأولوية لإصلاح شبكة الصرف الصحي قبل تعبيد الطرقات لتجنب إعادة الحفر.",
       status: "pending",
       createdAt: "2026-05-30T10:10:00.000Z",
@@ -153,16 +163,32 @@ function seedSuggestions(): Suggestion[] {
 function createStore(): Store {
   const decisions = new Map<string, Decision>();
   const suggestions = new Map<string, Suggestion>();
+  const submittedEmails = new Map<string, Set<string>>();
+
   seedDecisions().forEach((d) => decisions.set(d.id, d));
-  seedSuggestions().forEach((s) => suggestions.set(s.id, s));
-  return { decisions, suggestions };
+  seedSuggestions().forEach((s) => {
+    suggestions.set(s.id, s);
+    if (s.email) {
+      const set = submittedEmails.get(s.decisionId) ?? new Set<string>();
+      set.add(s.email.toLowerCase());
+      submittedEmails.set(s.decisionId, set);
+    }
+  });
+
+  return { decisions, suggestions, submittedEmails };
 }
 
-export const store: Store =
-  globalForStore.__damascusStore ?? createStore();
+const needsFresh =
+  !globalForStore.__damascusStore ||
+  globalForStore.__damascusStoreVersion !== STORE_VERSION;
 
-if (!globalForStore.__damascusStore) {
+export const store: Store = needsFresh
+  ? createStore()
+  : globalForStore.__damascusStore!;
+
+if (needsFresh) {
   globalForStore.__damascusStore = store;
+  globalForStore.__damascusStoreVersion = STORE_VERSION;
 }
 
 export function nextDecisionId(): string {
