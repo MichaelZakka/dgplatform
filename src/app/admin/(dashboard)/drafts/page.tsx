@@ -5,8 +5,8 @@ import ContinueDraftLink from "@/components/ContinueDraftLink";
 import DeleteDecisionButton from "@/components/DeleteDecisionButton";
 import styles from "./page.module.css";
 
-export default function AdminDraftsPage() {
-  const drafts = listDraftDecisions();
+export default async function AdminDraftsPage() {
+  const drafts = await listDraftDecisions();
 
   return (
     <div className={styles.wrap}>

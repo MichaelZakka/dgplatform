@@ -8,7 +8,7 @@ export default async function EditDraftDecisionPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const decision = getDecision(id);
+  const decision = await getDecision(id);
 
   if (!decision || decision.status !== "draft") {
     notFound();

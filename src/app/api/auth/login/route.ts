@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!verifyCredentials(username, password)) {
+  if (!(await verifyCredentials(username, password))) {
     return NextResponse.json(
       { error: "اسم المستخدم أو كلمة المرور غير صحيحة." },
       { status: 401 }

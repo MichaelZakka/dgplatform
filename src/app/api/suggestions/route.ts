@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   if (denied) return denied;
 
   const { searchParams } = request.nextUrl;
-  const suggestions = listSuggestions({
+  const suggestions = await listSuggestions({
     status: searchParams.get("status") ?? undefined,
     category: searchParams.get("category") ?? undefined,
     decisionId: searchParams.get("decisionId") ?? undefined,
@@ -116,7 +116,7 @@ async function handlePost(request: NextRequest) {
   }
 
   // Decision exists
-  if (!getDecision(decisionId)) {
+  if (!(await getDecision(decisionId))) {
     return NextResponse.json(
       { error: "القرار المرتبط غير موجود." },
       { status: 404 }
@@ -124,13 +124,13 @@ async function handlePost(request: NextRequest) {
   }
 
   // One suggestion per email per decision
-  if (hasEmailSubmittedForDecision(decisionId, email)) {
+  if (await hasEmailSubmittedForDecision(decisionId, email)) {
     return NextResponse.json(
       { error: "لقد أرسلت مقترحاً لهذا القرار مسبقاً باستخدام هذا البريد الإلكتروني." },
       { status: 409 }
     );
   }
 
-  const suggestion = createSuggestion({ decisionId, email, body });
+  const suggestion = await createSuggestion({ decisionId, email, body });
   return NextResponse.json({ suggestion }, { status: 201 });
 }

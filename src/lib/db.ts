@@ -1,9 +1,4 @@
-import {
-  store,
-  nextDecisionId,
-  nextDecisionNumber,
-  nextSuggestionId,
-} from "./store";
+import { prisma } from "./prisma";
 import type {
   Decision,
   DecisionQuery,
@@ -11,73 +6,120 @@ import type {
   SuggestionStatus,
 } from "./types";
 
-function sortByDateDesc<T extends { date?: string; createdAt: string }>(
-  items: T[]
-): T[] {
-  return [...items].sort((a, b) => {
-    const aKey = a.date ?? a.createdAt;
-    const bKey = b.date ?? b.createdAt;
-    return bKey.localeCompare(aKey);
-  });
+// ---------------------------------------------------------------------------
+// Row → domain mappers
+// The database stores `createdAt` as a DateTime; the app types expect an ISO
+// string. `category` / `status` are stored as plain strings and narrowed here.
+// ---------------------------------------------------------------------------
+
+interface DecisionRow {
+  id: string;
+  number: string;
+  title: string;
+  summary: string;
+  fullText: string;
+  category: string;
+  governorate: string;
+  directorate: string;
+  area: string;
+  date: string;
+  pdfUrl: string;
+  status: string;
+  createdAt: Date;
 }
 
-export function listDecisions(query: DecisionQuery = {}): Decision[] {
+interface SuggestionRow {
+  id: string;
+  decisionId: string;
+  email: string;
+  body: string;
+  status: string;
+  createdAt: Date;
+}
+
+function toDecision(row: DecisionRow): Decision {
+  return {
+    id: row.id,
+    number: row.number,
+    title: row.title,
+    summary: row.summary,
+    fullText: row.fullText,
+    category: row.category as Decision["category"],
+    governorate: row.governorate,
+    directorate: row.directorate,
+    area: row.area,
+    date: row.date,
+    pdfUrl: row.pdfUrl,
+    status: row.status as Decision["status"],
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+function toSuggestion(row: SuggestionRow): Suggestion {
+  return {
+    id: row.id,
+    decisionId: row.decisionId,
+    email: row.email,
+    body: row.body,
+    status: row.status as SuggestionStatus,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Decisions
+// ---------------------------------------------------------------------------
+
+export async function listDecisions(
+  query: DecisionQuery = {}
+): Promise<Decision[]> {
   const { search, category, governorate, directorate, area, year, month, from } =
     query;
-  let results = Array.from(store.decisions.values()).filter(
-    (d) => d.status === "published"
-  );
+
+  const where: Record<string, unknown> = { status: "published" };
 
   if (search && search.trim()) {
-    const term = search.trim().toLowerCase();
-    results = results.filter(
-      (d) =>
-        d.title.toLowerCase().includes(term) ||
-        d.summary.toLowerCase().includes(term) ||
-        d.fullText.toLowerCase().includes(term) ||
-        d.number.toLowerCase().includes(term)
-    );
+    const term = search.trim();
+    where.OR = [
+      { title: { contains: term } },
+      { summary: { contains: term } },
+      { fullText: { contains: term } },
+      { number: { contains: term } },
+    ];
   }
 
-  if (category && category.trim()) {
-    results = results.filter((d) => d.category === category);
-  }
+  if (category && category.trim()) where.category = category;
+  if (governorate && governorate.trim()) where.governorate = governorate;
+  if (directorate && directorate.trim()) where.directorate = directorate;
+  if (area && area.trim()) where.area = area;
 
-  if (governorate && governorate.trim()) {
-    results = results.filter((d) => d.governorate === governorate);
-  }
-
-  if (directorate && directorate.trim()) {
-    results = results.filter((d) => d.directorate === directorate);
-  }
-
-  if (area && area.trim()) {
-    results = results.filter((d) => d.area === area);
-  }
-
-  if (year && year.trim()) {
-    results = results.filter((d) => d.date.startsWith(year));
-  }
-
+  // `date` is stored as a YYYY-MM-DD string, so prefix/range matching works.
   if (month && month.trim()) {
-    // month expected as YYYY-MM
-    results = results.filter((d) => d.date.startsWith(month));
+    where.date = { startsWith: month };
+  } else if (year && year.trim()) {
+    where.date = { startsWith: year };
   }
-
   if (from && from.trim()) {
-    // from expected as YYYY-MM-DD; include decisions on or after this date
-    results = results.filter((d) => d.date >= from);
+    where.date = { ...(where.date as object), gte: from };
   }
 
-  return sortByDateDesc(results);
+  const rows = await prisma.decision.findMany({
+    where,
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+  });
+  return rows.map(toDecision);
 }
 
-export function listAllDecisions(): Decision[] {
-  return sortByDateDesc(Array.from(store.decisions.values()));
+export async function listAllDecisions(): Promise<Decision[]> {
+  const rows = await prisma.decision.findMany({
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+  });
+  return rows.map(toDecision);
 }
 
-export function getDecision(id: string): Decision | undefined {
-  return store.decisions.get(id);
+export async function getDecision(id: string): Promise<Decision | undefined> {
+  const row = await prisma.decision.findUnique({ where: { id } });
+  return row ? toDecision(row) : undefined;
 }
 
 export interface CreateDecisionInput {
@@ -94,166 +136,32 @@ export interface CreateDecisionInput {
   number?: string;
 }
 
-export function createDecision(input: CreateDecisionInput): Decision {
-  const id = nextDecisionId();
-  const decision: Decision = {
-    id,
-    number: input.number?.trim() || nextDecisionNumber(),
-    title: input.title,
-    summary: input.summary,
-    fullText: input.fullText,
-    category: input.category,
-    governorate: input.governorate,
-    directorate: input.directorate,
-    area: input.area,
-    date: input.date,
-    pdfUrl: input.pdfUrl || "",
-    status: input.status ?? "published",
-    createdAt: new Date().toISOString(),
-  };
-  store.decisions.set(id, decision);
-  return decision;
+async function nextDecisionNumber(): Promise<string> {
+  const year = new Date().getFullYear();
+  const count = await prisma.decision.count();
+  return `${year}/${String(count + 1).padStart(3, "0")}`;
 }
 
-export interface SuggestionQuery {
-  category?: string;
-  status?: string;
-  decisionId?: string;
-  date?: string;
-}
-
-export interface SuggestionWithDecision extends Suggestion {
-  decisionTitle: string;
-  decisionNumber: string;
-  decisionCategory: Decision["category"] | null;
-}
-
-function enrichSuggestion(s: Suggestion): SuggestionWithDecision {
-  const decision = store.decisions.get(s.decisionId);
-  return {
-    ...s,
-    decisionTitle: decision?.title ?? "قرار محذوف",
-    decisionNumber: decision?.number ?? "—",
-    decisionCategory: decision?.category ?? null,
-  };
-}
-
-export function listSuggestions(
-  query: SuggestionQuery = {}
-): SuggestionWithDecision[] {
-  const { category, status, decisionId, date } = query;
-  let results = Array.from(store.suggestions.values()).map(enrichSuggestion);
-
-  if (status && status.trim()) {
-    results = results.filter((s) => s.status === status);
-  }
-
-  if (category && category.trim()) {
-    results = results.filter((s) => s.decisionCategory === category);
-  }
-
-  if (decisionId && decisionId.trim()) {
-    results = results.filter((s) => s.decisionId === decisionId);
-  }
-
-  if (date && date.trim()) {
-    results = results.filter((s) => s.createdAt.startsWith(date));
-  }
-
-  return sortByDateDesc(results);
-}
-
-export function getSuggestionsForDecision(
-  decisionId: string
-): Suggestion[] {
-  return sortByDateDesc(
-    Array.from(store.suggestions.values()).filter(
-      (s) => s.decisionId === decisionId
-    )
-  );
-}
-
-export interface CreateSuggestionInput {
-  decisionId: string;
-  email: string;
-  body: string;
-}
-
-export function hasEmailSubmittedForDecision(
-  decisionId: string,
-  email: string
-): boolean {
-  const set = store.submittedEmails?.get(decisionId);
-  return set?.has(email.toLowerCase()) ?? false;
-}
-
-export function createSuggestion(input: CreateSuggestionInput): Suggestion {
-  const id = nextSuggestionId();
-  const suggestion: Suggestion = {
-    id,
-    decisionId: input.decisionId,
-    email: input.email.toLowerCase(),
-    body: input.body,
-    status: "pending",
-    createdAt: new Date().toISOString(),
-  };
-  store.suggestions.set(id, suggestion);
-
-  // Track email so the same address cannot submit again for this decision
-  const existing = store.submittedEmails.get(input.decisionId) ?? new Set<string>();
-  existing.add(input.email.toLowerCase());
-  store.submittedEmails.set(input.decisionId, existing);
-
-  return suggestion;
-}
-
-export function updateSuggestionStatus(
-  id: string,
-  status: SuggestionStatus
-): Suggestion | undefined {
-  const suggestion = store.suggestions.get(id);
-  if (!suggestion) return undefined;
-  const updated: Suggestion = { ...suggestion, status };
-  store.suggestions.set(id, updated);
-  return updated;
-}
-
-export function deleteSuggestion(id: string): boolean {
-  const suggestion = store.suggestions.get(id);
-  if (!suggestion) return false;
-
-  store.suggestions.delete(id);
-
-  const emails = store.submittedEmails?.get(suggestion.decisionId);
-  if (emails) {
-    emails.delete(suggestion.email.toLowerCase());
-    if (emails.size === 0) {
-      store.submittedEmails.delete(suggestion.decisionId);
-    }
-  }
-
-  return true;
-}
-
-export function deleteDecision(id: string): boolean {
-  return store.decisions.delete(id);
-}
-
-export function listDraftDecisions(): Decision[] {
-  return sortByDateDesc(
-    Array.from(store.decisions.values()).filter((d) => d.status === "draft")
-  );
-}
-
-export function updateDecisionStatus(
-  id: string,
-  status: Decision["status"]
-): Decision | undefined {
-  const decision = store.decisions.get(id);
-  if (!decision) return undefined;
-  const updated: Decision = { ...decision, status };
-  store.decisions.set(id, updated);
-  return updated;
+export async function createDecision(
+  input: CreateDecisionInput
+): Promise<Decision> {
+  const number = input.number?.trim() || (await nextDecisionNumber());
+  const row = await prisma.decision.create({
+    data: {
+      number,
+      title: input.title,
+      summary: input.summary,
+      fullText: input.fullText,
+      category: input.category,
+      governorate: input.governorate,
+      directorate: input.directorate,
+      area: input.area,
+      date: input.date,
+      pdfUrl: input.pdfUrl || "",
+      status: input.status ?? "published",
+    },
+  });
+  return toDecision(row);
 }
 
 export interface UpdateDecisionInput {
@@ -270,31 +178,186 @@ export interface UpdateDecisionInput {
   status?: Decision["status"];
 }
 
-export function updateDecision(
+export async function updateDecision(
   id: string,
   input: UpdateDecisionInput
-): Decision | undefined {
-  const decision = store.decisions.get(id);
-  if (!decision) return undefined;
-
-  const updated: Decision = {
-    ...decision,
-    title: input.title ?? decision.title,
-    summary: input.summary ?? decision.summary,
-    fullText: input.fullText ?? decision.fullText,
-    category: input.category ?? decision.category,
-    governorate: input.governorate ?? decision.governorate,
-    directorate: input.directorate ?? decision.directorate,
-    area: input.area ?? decision.area,
-    date: input.date ?? decision.date,
-    pdfUrl: input.pdfUrl ?? decision.pdfUrl,
-    number: input.number?.trim() ? input.number.trim() : decision.number,
-    status: input.status ?? decision.status,
-  };
-
-  store.decisions.set(id, updated);
-  return updated;
+): Promise<Decision | undefined> {
+  try {
+    const row = await prisma.decision.update({
+      where: { id },
+      data: {
+        title: input.title,
+        summary: input.summary,
+        fullText: input.fullText,
+        category: input.category,
+        governorate: input.governorate,
+        directorate: input.directorate,
+        area: input.area,
+        date: input.date,
+        pdfUrl: input.pdfUrl,
+        number: input.number?.trim() ? input.number.trim() : undefined,
+        status: input.status,
+      },
+    });
+    return toDecision(row);
+  } catch {
+    return undefined;
+  }
 }
+
+export async function updateDecisionStatus(
+  id: string,
+  status: Decision["status"]
+): Promise<Decision | undefined> {
+  try {
+    const row = await prisma.decision.update({
+      where: { id },
+      data: { status },
+    });
+    return toDecision(row);
+  } catch {
+    return undefined;
+  }
+}
+
+export async function deleteDecision(id: string): Promise<boolean> {
+  try {
+    await prisma.decision.delete({ where: { id } });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function listDraftDecisions(): Promise<Decision[]> {
+  const rows = await prisma.decision.findMany({
+    where: { status: "draft" },
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+  });
+  return rows.map(toDecision);
+}
+
+// ---------------------------------------------------------------------------
+// Suggestions
+// ---------------------------------------------------------------------------
+
+export interface SuggestionQuery {
+  category?: string;
+  status?: string;
+  decisionId?: string;
+  date?: string;
+}
+
+export interface SuggestionWithDecision extends Suggestion {
+  decisionTitle: string;
+  decisionNumber: string;
+  decisionCategory: Decision["category"] | null;
+}
+
+export async function listSuggestions(
+  query: SuggestionQuery = {}
+): Promise<SuggestionWithDecision[]> {
+  const { category, status, decisionId, date } = query;
+
+  const where: Record<string, unknown> = {};
+  if (status && status.trim()) where.status = status;
+  if (decisionId && decisionId.trim()) where.decisionId = decisionId;
+  if (category && category.trim()) where.decision = { category };
+  if (date && date.trim()) {
+    const start = new Date(`${date}T00:00:00.000Z`);
+    if (!Number.isNaN(start.getTime())) {
+      const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+      where.createdAt = { gte: start, lt: end };
+    }
+  }
+
+  const rows = await prisma.suggestion.findMany({
+    where,
+    include: { decision: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return rows.map((row) => ({
+    ...toSuggestion(row),
+    decisionTitle: row.decision?.title ?? "قرار محذوف",
+    decisionNumber: row.decision?.number ?? "—",
+    decisionCategory:
+      (row.decision?.category as Decision["category"] | undefined) ?? null,
+  }));
+}
+
+export async function getSuggestionsForDecision(
+  decisionId: string
+): Promise<Suggestion[]> {
+  const rows = await prisma.suggestion.findMany({
+    where: { decisionId },
+    orderBy: { createdAt: "desc" },
+  });
+  return rows.map(toSuggestion);
+}
+
+export interface CreateSuggestionInput {
+  decisionId: string;
+  email: string;
+  body: string;
+}
+
+export async function hasEmailSubmittedForDecision(
+  decisionId: string,
+  email: string
+): Promise<boolean> {
+  const existing = await prisma.suggestion.findFirst({
+    where: { decisionId, email: email.toLowerCase() },
+    select: { id: true },
+  });
+  return existing !== null;
+}
+
+export async function createSuggestion(
+  input: CreateSuggestionInput
+): Promise<Suggestion> {
+  const row = await prisma.suggestion.create({
+    data: {
+      decisionId: input.decisionId,
+      email: input.email.toLowerCase(),
+      body: input.body,
+      status: "pending",
+    },
+  });
+  return toSuggestion(row);
+}
+
+export async function updateSuggestionStatus(
+  id: string,
+  status: SuggestionStatus
+): Promise<Suggestion | undefined> {
+  try {
+    const row = await prisma.suggestion.update({
+      where: { id },
+      data: { status },
+    });
+    return toSuggestion(row);
+  } catch {
+    return undefined;
+  }
+}
+
+export async function deleteSuggestion(id: string): Promise<boolean> {
+  try {
+    await prisma.suggestion.delete({ where: { id } });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function isSuggestionStatus(value: unknown): value is SuggestionStatus {
+  return value === "pending" || value === "approved" || value === "rejected";
+}
+
+// ---------------------------------------------------------------------------
+// Admin stats
+// ---------------------------------------------------------------------------
 
 export interface AdminStats {
   totalDecisions: number;
@@ -303,13 +366,19 @@ export interface AdminStats {
   approvedSuggestions: number;
 }
 
-export function getAdminStats(): AdminStats {
-  const allDecisions = Array.from(store.decisions.values());
-  const suggestions = Array.from(store.suggestions.values());
+export async function getAdminStats(): Promise<AdminStats> {
+  const [totalDecisions, totalDrafts, pendingSuggestions, approvedSuggestions] =
+    await Promise.all([
+      prisma.decision.count({ where: { status: "published" } }),
+      prisma.decision.count({ where: { status: "draft" } }),
+      prisma.suggestion.count({ where: { status: "pending" } }),
+      prisma.suggestion.count({ where: { status: "approved" } }),
+    ]);
+
   return {
-    totalDecisions: allDecisions.filter((d) => d.status === "published").length,
-    totalDrafts: allDecisions.filter((d) => d.status === "draft").length,
-    pendingSuggestions: suggestions.filter((s) => s.status === "pending").length,
-    approvedSuggestions: suggestions.filter((s) => s.status === "approved").length,
+    totalDecisions,
+    totalDrafts,
+    pendingSuggestions,
+    approvedSuggestions,
   };
 }

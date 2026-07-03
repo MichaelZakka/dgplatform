@@ -9,8 +9,8 @@ const STATUS_LABELS: Record<string, string> = {
   draft: "مسودة",
 };
 
-export default function AdminDecisionsPage() {
-  const decisions = listAllDecisions();
+export default async function AdminDecisionsPage() {
+  const decisions = await listAllDecisions();
 
   return (
     <div className={styles.wrap}>

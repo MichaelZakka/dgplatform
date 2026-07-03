@@ -6,7 +6,7 @@ import { requireAdminApi } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
-  const decisions = listDecisions({
+  const decisions = await listDecisions({
     search: searchParams.get("search") ?? undefined,
     category: searchParams.get("category") ?? undefined,
     governorate: searchParams.get("governorate") ?? undefined,
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const decision = createDecision({
+  const decision = await createDecision({
     title,
     summary: summary || "",
     fullText: fullText || "",

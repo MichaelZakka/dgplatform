@@ -13,11 +13,11 @@ export default async function AdminDecisionDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const decision = getDecision(id);
+  const decision = await getDecision(id);
 
   if (!decision) notFound();
 
-  const suggestions = getSuggestionsForDecision(id);
+  const suggestions = await getSuggestionsForDecision(id);
   const paragraphs = decision.fullText
     .split("\n")
     .map((p) => p.trim())

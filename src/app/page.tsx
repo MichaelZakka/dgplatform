@@ -18,7 +18,7 @@ export default async function HomePage({
     return Array.isArray(value) ? value[0] : value;
   };
 
-  const decisions = listDecisions({
+  const decisions = await listDecisions({
     search: getParam("search"),
     category: getParam("category"),
     governorate: getParam("governorate"),

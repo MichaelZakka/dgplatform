@@ -15,13 +15,18 @@ const STATUS_LABELS: Record<string, string> = {
   rejected: "مرفوض",
 };
 
-export default function AdminDashboard() {
-  const stats = getAdminStats();
-  const recentDecisions = listAllDecisions()
+export default async function AdminDashboard() {
+  const [stats, allDecisions, drafts, suggestions] = await Promise.all([
+    getAdminStats(),
+    listAllDecisions(),
+    listDraftDecisions(),
+    listSuggestions(),
+  ]);
+  const recentDecisions = allDecisions
     .filter((d) => d.status === "published")
     .slice(0, 4);
-  const recentDrafts = listDraftDecisions().slice(0, 4);
-  const recentSuggestions = listSuggestions().slice(0, 5);
+  const recentDrafts = drafts.slice(0, 4);
+  const recentSuggestions = suggestions.slice(0, 5);
 
   const cards = [
     {
@@ -37,15 +42,9 @@ export default function AdminDashboard() {
       href: "/admin/drafts",
     },
     {
-      label: "مقترحات قيد المراجعة",
-      value: stats.pendingSuggestions,
+      label: "مقترحات",
+      value: suggestions.length,
       accent: "var(--color-damask-red)",
-      href: "/admin/suggestions",
-    },
-    {
-      label: "مقترحات مقبولة",
-      value: stats.approvedSuggestions,
-      accent: "var(--color-mountain-teal)",
       href: "/admin/suggestions",
     },
   ];

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
-import { updateSuggestionStatus, deleteSuggestion } from "@/lib/db";
-import { isSuggestionStatus } from "@/lib/store";
+import {
+  updateSuggestionStatus,
+  deleteSuggestion,
+  isSuggestionStatus,
+} from "@/lib/db";
 import { requireAdminApi } from "@/lib/auth";
 
 export async function PATCH(
@@ -30,7 +33,7 @@ export async function PATCH(
     );
   }
 
-  const updated = updateSuggestionStatus(id, status);
+  const updated = await updateSuggestionStatus(id, status);
   if (!updated) {
     return NextResponse.json(
       { error: "المقترح غير موجود." },
@@ -49,7 +52,7 @@ export async function DELETE(
   if (denied) return denied;
 
   const { id } = await ctx.params;
-  const removed = deleteSuggestion(id);
+  const removed = await deleteSuggestion(id);
 
   if (!removed) {
     return NextResponse.json(

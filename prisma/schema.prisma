@@ -1,0 +1,60 @@
+// Prisma schema for the Damascus Governorate decisions platform.
+// Using SQLite for a zero-config local database (a single dev.db file).
+// To move to PostgreSQL later, change `provider` to "postgresql" and update
+// DATABASE_URL, then run a fresh migration.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Decision {
+  id          String   @id @default(cuid())
+  number      String
+  title       String
+  summary     String   @default("")
+  fullText    String   @default("")
+  category    String
+  governorate String   @default("")
+  directorate String   @default("")
+  area        String   @default("")
+  // Stored as an ISO date string (YYYY-MM-DD) to match the app's filtering logic.
+  date        String
+  pdfUrl      String   @default("")
+  // "draft" | "published"
+  status      String   @default("published")
+  createdAt   DateTime @default(now())
+
+  suggestions Suggestion[]
+
+  @@index([status])
+  @@index([category])
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  // Salted scrypt hash, stored as "saltHex:hashHex".
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model Suggestion {
+  id         String   @id @default(cuid())
+  decisionId String
+  email      String
+  body       String
+  // "pending" | "approved" | "rejected"
+  status     String   @default("pending")
+  createdAt  DateTime @default(now())
+
+  decision Decision @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+
+  // Enforce one suggestion per email per decision at the database level.
+  @@unique([decisionId, email])
+  @@index([status])
+}

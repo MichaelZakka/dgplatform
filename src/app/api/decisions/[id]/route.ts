@@ -9,7 +9,7 @@ export async function GET(
   ctx: RouteContext<"/api/decisions/[id]">
 ) {
   const { id } = await ctx.params;
-  const decision = getDecision(id);
+  const decision = await getDecision(id);
 
   if (!decision) {
     return NextResponse.json(
@@ -29,7 +29,7 @@ export async function PATCH(
   if (denied) return denied;
 
   const { id } = await ctx.params;
-  const existing = getDecision(id);
+  const existing = await getDecision(id);
   if (!existing) {
     return NextResponse.json({ error: "القرار غير موجود." }, { status: 404 });
   }
@@ -99,7 +99,7 @@ export async function PATCH(
     }
   }
 
-  const updated = updateDecision(id, {
+  const updated = await updateDecision(id, {
     title,
     summary: summary || "",
     fullText: fullText || "",
@@ -125,13 +125,13 @@ export async function DELETE(
 
   const { id } = await ctx.params;
 
-  if (!getDecision(id)) {
+  if (!(await getDecision(id))) {
     return NextResponse.json(
       { error: "القرار غير موجود." },
       { status: 404 }
     );
   }
 
-  deleteDecision(id);
+  await deleteDecision(id);
   return new NextResponse(null, { status: 204 });
 }

@@ -25,7 +25,7 @@ export async function GET(
   ctx: RouteContext<"/api/decisions/[id]/pdf">
 ) {
   const { id } = await ctx.params;
-  const decision = getDecision(id);
+  const decision = await getDecision(id);
 
   if (!decision || decision.status !== "published") {
     return NextResponse.json(

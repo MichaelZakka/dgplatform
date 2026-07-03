@@ -36,9 +36,31 @@ Modules** (no Tailwind). The interface is **Arabic-first and RTL**.
 | PATCH  | `/api/suggestions/[id]`  | Update suggestion status (`approved`/`rejected`) |
 | DELETE | `/api/suggestions/[id]`  | Remove a suggestion                           |
 
-Data is held in an **in-memory store** (`src/lib/store.ts`) seeded with 6 mock
-decisions. No database is required for the prototype. The store is attached to
-`globalThis` so it survives hot reloads during development.
+## Database
+
+Data is persisted in a **database via [Prisma ORM](https://www.prisma.io/)**.
+The default setup uses **SQLite** (a single `prisma/dev.db` file), so no external
+database server is required for local development. To switch to PostgreSQL later,
+change the `provider` in `prisma/schema.prisma` and update `DATABASE_URL`.
+
+- **Schema:** `prisma/schema.prisma` (`Decision` and `Suggestion` models)
+- **Config:** `prisma.config.ts` (Prisma 7 config: schema path, migrations, seed)
+- **Client:** `src/lib/prisma.ts` (singleton, uses the `better-sqlite3` driver adapter)
+- **Data access:** `src/lib/db.ts` (async helpers used by pages and API routes)
+- **Seed data:** `prisma/seed.ts` (6 mock decisions + 3 suggestions)
+
+The connection string is read from `DATABASE_URL` in `.env`
+(see `.env.example`). Uploaded decision PDFs are still stored on disk under
+`public/files/decisions/`.
+
+### Database commands
+
+```bash
+npx prisma migrate dev      # create/apply migrations (also generates the client)
+npx prisma generate         # (re)generate the Prisma client
+npm run db:seed             # seed the database with mock data
+npm run db:studio           # open Prisma Studio to inspect data
+```
 
 ## Project structure
 
@@ -61,15 +83,23 @@ src/
   components/                     # *.tsx + *.module.css
   lib/
     types.ts                      # TypeScript types
-    store.ts                      # In-memory seed store
-    db.ts                         # Data-access helpers
+    prisma.ts                     # Prisma client singleton (SQLite adapter)
+    db.ts                         # Async data-access helpers (Prisma)
     format.ts                     # Arabic date/number formatting
+  generated/prisma/               # Generated Prisma client (gitignored)
+prisma/
+  schema.prisma                   # Database schema
+  seed.ts                         # Seed script
+  migrations/                     # Migration history
 ```
 
 ## Getting started
 
 ```bash
-npm install
+npm install                 # installs deps and generates the Prisma client
+cp .env.example .env        # then set DATABASE_URL (defaults to SQLite)
+npx prisma migrate dev      # create the database and apply migrations
+npm run db:seed             # (optional) load mock data
 npm run dev
 ```
 

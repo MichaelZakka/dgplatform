@@ -12,7 +12,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const decision = getDecision(id);
+  const decision = await getDecision(id);
   if (!decision) {
     return { title: "القرار غير موجود | محافظة دمشق" };
   }
@@ -28,7 +28,7 @@ export default async function DecisionPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const decision = getDecision(id);
+  const decision = await getDecision(id);
 
   if (!decision || decision.status !== "published") {
     notFound();
