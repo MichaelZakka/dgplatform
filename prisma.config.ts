@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -8,6 +8,8 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: env("DATABASE_URL"),
+    // Fall back to the local SQLite file so config loading (and `prisma generate`
+    // during install) never fails when DATABASE_URL is unset, e.g. on CI/Vercel.
+    url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
   },
 });
