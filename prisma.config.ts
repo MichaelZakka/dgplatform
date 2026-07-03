@@ -8,8 +8,11 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    // Fall back to the local SQLite file so config loading (and `prisma generate`
-    // during install) never fails when DATABASE_URL is unset, e.g. on CI/Vercel.
-    url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
+    // Fall back to a placeholder connection string so config loading (and
+    // `prisma generate` during install) never fails when DATABASE_URL is unset,
+    // e.g. on CI/Vercel. The real URL must be set for migrations and at runtime.
+    url:
+      process.env.DATABASE_URL ??
+      "postgresql://user:pass@localhost:5432/postgres",
   },
 });

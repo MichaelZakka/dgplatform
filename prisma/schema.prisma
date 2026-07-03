@@ -1,7 +1,6 @@
 // Prisma schema for the Damascus Governorate decisions platform.
-// Using SQLite for a zero-config local database (a single dev.db file).
-// To move to PostgreSQL later, change `provider` to "postgresql" and update
-// DATABASE_URL, then run a fresh migration.
+// Uses PostgreSQL. Set DATABASE_URL to your Postgres connection string
+// (e.g. Vercel Postgres / Neon / Supabase) in the environment.
 
 generator client {
   provider = "prisma-client"
@@ -9,7 +8,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model Decision {
