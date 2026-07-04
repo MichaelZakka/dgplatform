@@ -2,32 +2,33 @@ import { NextResponse } from "next/server";
 import { getDecision } from "@/lib/db";
 import { buildSimplePdf, decisionPdfFilename } from "@/lib/pdf";
 
-async function readStoredPdf(pdfUrl: string): Promise<Uint8Array | null> {
+export const dynamic = "force-dynamic";
+
+async function readStoredPdf(
+  pdfUrl: string,
+  origin: string
+): Promise<Uint8Array | null> {
   if (!pdfUrl) return null;
 
-  if (pdfUrl.startsWith("http")) {
-    try {
-      const res = await fetch(pdfUrl);
-      if (!res.ok) return null;
-      return new Uint8Array(await res.arrayBuffer());
-    } catch {
-      return null;
-    }
-  }
+  // Resolve the fetch target: absolute (blob) URLs are used as-is, while
+  // legacy local paths (e.g. "/files/decisions/...") are served statically
+  // by the CDN — read them over HTTP instead of the filesystem, which is not
+  // reliably available inside serverless functions on Vercel.
+  const target = pdfUrl.startsWith("http")
+    ? pdfUrl
+    : `${origin}/${pdfUrl.replace(/^\//, "")}`;
 
-  // Legacy: local filesystem path (dev only)
   try {
-    const { readFile } = await import("fs/promises");
-    const { join } = await import("path");
-    const buffer = await readFile(join(process.cwd(), "public", pdfUrl.replace(/^\//, "")));
-    return new Uint8Array(buffer);
+    const res = await fetch(target, { cache: "no-store" });
+    if (!res.ok) return null;
+    return new Uint8Array(await res.arrayBuffer());
   } catch {
     return null;
   }
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   ctx: RouteContext<"/api/decisions/[id]/pdf">
 ) {
   const { id } = await ctx.params;
@@ -41,7 +42,10 @@ export async function GET(
   }
 
   const filename = decisionPdfFilename(decision.number);
-  const stored = decision.pdfUrl ? await readStoredPdf(decision.pdfUrl) : null;
+  const origin = new URL(request.url).origin;
+  const stored = decision.pdfUrl
+    ? await readStoredPdf(decision.pdfUrl, origin)
+    : null;
   const pdfBytes =
     stored ??
     buildSimplePdf([
@@ -56,7 +60,7 @@ export async function GET(
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="${filename}"`,
-      "Cache-Control": "private, max-age=3600",
+      "Cache-Control": "no-store",
     },
   });
 }
