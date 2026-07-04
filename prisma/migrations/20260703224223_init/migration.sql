@@ -49,10 +49,10 @@ CREATE INDEX "Decision_category_idx" ON "Decision"("category");
 CREATE UNIQUE INDEX "AdminUser_username_key" ON "AdminUser"("username");
 
 -- CreateIndex
-CREATE INDEX "Suggestion_status_idx" ON "Suggestion"("status");
+CREATE UNIQUE INDEX "Suggestion_decisionId_email_key" ON "Suggestion"("decisionId", "email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Suggestion_decisionId_email_key" ON "Suggestion"("decisionId", "email");
+CREATE INDEX "Suggestion_status_idx" ON "Suggestion"("status");
 
 -- AddForeignKey
 ALTER TABLE "Suggestion" ADD CONSTRAINT "Suggestion_decisionId_fkey" FOREIGN KEY ("decisionId") REFERENCES "Decision"("id") ON DELETE CASCADE ON UPDATE CASCADE;
