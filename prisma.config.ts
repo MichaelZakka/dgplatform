@@ -12,5 +12,8 @@ export default defineConfig({
     // During `prisma generate` (postinstall) no connection is made, so an
     // empty placeholder is safe there.
     url: process.env.DATABASE_URL ?? "postgresql://placeholder",
+    // Use the direct (unpooled) connection for migrations so Prisma can
+    // acquire advisory locks, which PgBouncer/pooled connections block.
+    directUrl: process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL ?? "postgresql://placeholder",
   },
 });
