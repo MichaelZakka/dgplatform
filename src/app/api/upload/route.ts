@@ -42,12 +42,18 @@ export async function POST(request: NextRequest) {
   const filename = `decisions/${Date.now()}-${safeName}`;
 
   try {
-    const blob = await put(filename, file, { access: "public" });
+    const blob = await put(filename, file, {
+      access: "public",
+      addRandomSuffix: true,
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+    });
     return NextResponse.json({ pdfUrl: blob.url });
   } catch (err) {
     console.error("Blob upload error:", err);
+    const detail =
+      err instanceof Error ? err.message : "خطأ غير معروف من خدمة التخزين.";
     return NextResponse.json(
-      { error: "تعذّر رفع الملف إلى خدمة التخزين. تحقق من إعداد BLOB_READ_WRITE_TOKEN." },
+      { error: `تعذّر رفع الملف إلى خدمة التخزين: ${detail}` },
       { status: 500 }
     );
   }
