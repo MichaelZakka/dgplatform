@@ -31,10 +31,24 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return NextResponse.json(
+      { error: "خدمة تخزين الملفات غير مهيأة. يرجى إضافة BLOB_READ_WRITE_TOKEN في إعدادات المشروع." },
+      { status: 503 }
+    );
+  }
+
   const safeName = file.name.replace(/[^a-zA-Z0-9._\-]/g, "_");
   const filename = `decisions/${Date.now()}-${safeName}`;
 
-  const blob = await put(filename, file, { access: "public" });
-
-  return NextResponse.json({ pdfUrl: blob.url });
+  try {
+    const blob = await put(filename, file, { access: "public" });
+    return NextResponse.json({ pdfUrl: blob.url });
+  } catch (err) {
+    console.error("Blob upload error:", err);
+    return NextResponse.json(
+      { error: "تعذّر رفع الملف إلى خدمة التخزين. تحقق من إعداد BLOB_READ_WRITE_TOKEN." },
+      { status: 500 }
+    );
+  }
 }
