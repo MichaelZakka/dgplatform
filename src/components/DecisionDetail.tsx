@@ -12,6 +12,7 @@ export default function DecisionDetail({ decision }: { decision: Decision }) {
     .filter(Boolean);
 
   return (
+    
     <div className={styles.wrap}>
       <Link href="/" className={styles.back}>
         <ArrowIcon />
