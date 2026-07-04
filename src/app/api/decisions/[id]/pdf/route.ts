@@ -1,19 +1,25 @@
-import { readFile } from "fs/promises";
-import path from "path";
 import { NextResponse } from "next/server";
 import { getDecision } from "@/lib/db";
 import { buildSimplePdf, decisionPdfFilename } from "@/lib/pdf";
 
 async function readStoredPdf(pdfUrl: string): Promise<Uint8Array | null> {
-  if (!pdfUrl || pdfUrl.startsWith("http")) {
-    return null;
+  if (!pdfUrl) return null;
+
+  if (pdfUrl.startsWith("http")) {
+    try {
+      const res = await fetch(pdfUrl);
+      if (!res.ok) return null;
+      return new Uint8Array(await res.arrayBuffer());
+    } catch {
+      return null;
+    }
   }
 
-  const relativePath = pdfUrl.replace(/^\//, "");
-  const filePath = path.join(process.cwd(), "public", relativePath);
-
+  // Legacy: local filesystem path (dev only)
   try {
-    const buffer = await readFile(filePath);
+    const { readFile } = await import("fs/promises");
+    const { join } = await import("path");
+    const buffer = await readFile(join(process.cwd(), "public", pdfUrl.replace(/^\//, "")));
     return new Uint8Array(buffer);
   } catch {
     return null;

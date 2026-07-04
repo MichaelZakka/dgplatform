@@ -1,5 +1,4 @@
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { put } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth";
 
@@ -32,15 +31,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Sanitize and timestamp the filename to avoid collisions
   const safeName = file.name.replace(/[^a-zA-Z0-9._\-]/g, "_");
-  const filename = `${Date.now()}-${safeName}`;
+  const filename = `decisions/${Date.now()}-${safeName}`;
 
-  const uploadDir = path.join(process.cwd(), "public", "files", "decisions");
-  await mkdir(uploadDir, { recursive: true });
+  const blob = await put(filename, file, { access: "public" });
 
-  const bytes = await file.arrayBuffer();
-  await writeFile(path.join(uploadDir, filename), Buffer.from(bytes));
-
-  return NextResponse.json({ pdfUrl: `/files/decisions/${filename}` });
+  return NextResponse.json({ pdfUrl: blob.url });
 }
